@@ -6,6 +6,14 @@ sudo dnf -y install wget
 dnf update -y
 dnf install git -y
 
+
+echo "Install python3, python3-pip, pip3 install requests on alma8" 
+sudo yum install -y python3
+sudo yum install python3-pip -y
+pip3 install requests
+#sudo yum install epel-release -y
+python3 --version
+
 echo "Install Postgres 13"
 sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 sudo dnf -qy module disable postgresql
@@ -45,9 +53,3 @@ sudo systemctl status postgresql-13
 
 cat /etc/passwd
 
-echo "Install python3, python3-pip, pip3 install requests on alma8" 
-sudo yum install -y python3
-sudo yum install python3-pip -y
-pip3 install requests
-#sudo yum install epel-release -y
-python3 --version
