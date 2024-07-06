@@ -25,14 +25,16 @@ echo "listen_addresses = '*'" >> /var/lib/pgsql/data/postgresql.conf
 exit
 
 echo "Create postgres components"
+sudo adduser medusa
+echo 'medusa:medusa' | sudo chpasswd
 sudo -u postgres psql << EOF
 create database medusa;
 create user medusa with encrypted password 'medusa';
 grant all privileges on database medusa to medusa;
 ALTER DATABASE medusa OWNER TO medusa;
 EOF
-sudo systemctl restart postgresql
-sudo systemctl status postgresql
+sudo systemctl restart postgresql-13
+sudo systemctl status postgresql-13
 
 #echo "Install Docker stuff"
 #sudo dnf install yum-utils -y
