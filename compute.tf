@@ -22,7 +22,7 @@ resource "aws_instance" "keycloak-master-instance" {
     private_key = tls_private_key.controller_private_key.private_key_pem
   }
 
-  user_data = file("test.sh")
+  user_data = file("init_medusa_rocky8.sh")
 
   root_block_device {
     volume_size = 22
