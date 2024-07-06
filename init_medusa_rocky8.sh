@@ -47,5 +47,5 @@ echo "Install python3, python3-pip, pip3 install requests on alma8"
 sudo yum install -y python3
 sudo yum install python3-pip -y
 pip3 install requests
-sudo yum install epel-release -y
+#sudo yum install epel-release -y
 python3 --version
