@@ -6,12 +6,15 @@ sudo dnf -y install wget
 dnf update -y
 dnf install git -y
 
-echo "Install postgres on Rocky Linux/"
-sudo yum install postgresql-server -y
-postgresql-setup --initdb --unit postgresql
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-sudo systemctl status postgresql
+echo "Install Postgres 13"
+#cd /etc/yum.repos.d/
+#sudo mv pgdg-redhat-all.repo pgdg-redhat-all.repo.old
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+sudo dnf -qy module disable postgresql
+sudo dnf install postgresql13-server -y
+sudo /usr/pgsql-13/bin/postgresql-13-setup initdb
+
+sudo dnf install postgresql13-contrib -y 
 
 echo "Add entries in /var/lib/pgsql/data/pg_hba.conf to allow md5 auth for all & postgres User"
 echo "Add Listener entry in /var/lib/pgsql/data/postgresql.conf "
