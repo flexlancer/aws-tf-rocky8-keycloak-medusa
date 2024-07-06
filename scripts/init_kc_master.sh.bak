@@ -1,0 +1,123 @@
+#!/bin/bash
+LOCAL_HOST_IP="10.79.1.14"
+KC_VERSION="keycloak-20.0.3"
+KC_HOME="/opt/keycloak/$KC_VERSION/"
+
+echo "Update Linux & Instal Java 11 on Amazon Linux 2"
+sudo yum update -y
+sudo amazon-linux-extras install epel -y
+sudo amazon-linux-extras install java-openjdk11 -y
+java --version
+sudo yum install java-11-openjdk-devel -y
+javac --version
+
+echo "Create keycloak directory"
+sudo mkdir /opt/keycloak/                                     
+sudo chown ec2-user:ec2-user /opt/keycloak/
+ls -las /opt/keycloak/
+
+echo "Create models directory & Attempt model dir ebs volume mount on Keycloak instances"
+sudo mkdir /var/opt/keycloak/
+sudo mkfs -t xfs /dev/sdf
+sudo mount /dev/sdf /var/opt/keycloak
+sudo chown ec2-user:ec2-user /var/opt/keycloak/
+
+echo "Check model-dir mount"
+ls -las /var/opt/keycloak/
+sudo lsblk -f
+sudo file -s /dev/sdf
+sudo blkid
+
+echo "Install Key Cloak"
+sudo wget https://github.com/keycloak/keycloak/releases/download/20.0.3/$KC_VERSION.tar.gz
+sudo tar -C /opt/keycloak -xzf $KC_VERSION.tar.gz
+sudo chown ec2-user:ec2-user -R /opt/keycloak/  
+
+#requires Centos 7 AMI 
+echo "Update Linux and prepare for postgres"
+sudo yum update -y
+sudo yum install -y python3
+
+echo "Install Pip (Pip is not available in CentOS 7 core repositories)"
+sudo yum install python3-pip -y --user
+pip3 install requests
+sudo yum install epel-release -y
+
+echo "Create Postgres modules directory & chown directories"
+sudo mkdir -p /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/
+sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/modules/system/layers/
+sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/modules/system/
+sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/modules/
+sudo ls -las /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+sudo ls -las /opt/keycloak/$KC_VERSION/modules/
+
+#sudo mkdir -p /opt/keycloak/$KC_VERSION/org/postgresql/main
+#sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/org/postgresql/main
+#sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/org/postgresql
+#sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/org/
+#ls -las /opt/keycloak/$KC_VERSION/org/postgresql/main
+
+echo "Install Postgres JDBC driver"
+sudo wget -c https://jdbc.postgresql.org/download/postgresql-42.5.4.jar -P /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+ls -las /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+file /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com/postgresql-42.5.4.jar
+touch /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com/module.xml
+#fill out module.xml manually
+
+#Original try #no longer needed
+#sudo wget -c https://jdbc.postgresql.org/download/postgresql-42.5.4.jar -P /opt/keycloak/$KC_VERSION/org/postgresql/main/
+#ls -las /opt/keycloak/$KC_VERSION/org/postgresql/main/
+#file /opt/keycloak/$KC_VERSION/org/postgresql/main/postgresql-42.5.4.jar
+#touch /opt/keycloak/$KC_VERSION/org/postgresql/main/module.xml
+
+echo "Install postgres 14 on amazon linux2 https://devopscube.com/install-configure-postgresql-amazon-linux/"
+sudo amazon-linux-extras enable postgresql14
+sudo yum install postgresql-server -y
+postgresql-setup --initdb --unit postgresql
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+sudo systemctl status postgresql
+
+#postgres14 config location here
+#sudo vi /var/lib/pgsql/data/postgresql.conf
+#sudo vi /var/lib/pgsql/data/pg_hba.conf
+#sudo systemctl restart postgresql
+
+echo "add entry in postgres conf to allow md5 authentication for users, keycloak & postgres"
+sudo su
+echo 'host      all          all             0.0.0.0/0         md5' >> /var/lib/pgsql/data/pg_hba.conf
+echo 'host      all          postgres        127.0.0.1/32      md5' >> /var/lib/pgsql/data/pg_hba.conf
+
+echo 'listen_addresses = '*'' >> /var/lib/pgsql/data/postgresql.conf
+#sudo nano /var/lib/pgsql/data/postgresql.conf
+
+echo "Update /etc/fstab for mount"
+sudo su
+echo  "/dev/sdf       /var/opt/keycloak        xfs     defaults,noatime        0       0  " >> /etc/fstab
+sudo mount -a
+
+echo "Install CloudWatch Agent"
+sudo yum install amazon-cloudwatch-agent -y
+
+echo "Update Linux"
+sudo yum update -y
+
+echo "Show boto and python versions"
+pip3 list | grep boto
+python -V
+python3 --version
+
+echo "Install Dev Tools"
+sudo yum groupinstall "Development tools" -y                                                                                                           #for gcc compiler
+sudo yum -y install wget
+
+echo "Update Linux"
+sudo yum update -y
+
+echo "For troubleshooting flexlm, install telnet"
+sudo yum -y install telnet
+
+echo "configure_postgres14.sh"
+echo "configure_keycloak_prod.sh"

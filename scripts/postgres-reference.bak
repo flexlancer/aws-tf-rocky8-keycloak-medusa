@@ -1,0 +1,149 @@
+set -e
+#cd /home/ec2-user
+#If automated, Error > could not change directory to "/home/ec2-user": Permission denied 
+#Fix with but possible security risk: sudo chmod og+X /home /home/ec2-user 
+
+#DB_NAME=${1:-keycloak}
+#DB_USER=${2:-keycloak}
+#DB_USER_PASS=${3:-keycloakpassword}
+
+#sudo su postgres <<EOF
+#createdb  $DB_NAME;
+#psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_USER_PASS';"
+#psql -c "grant all privileges on database $DB_NAME to $DB_USER;"
+#echo "Postgres User '$DB_USER' and database '$DB_NAME' created."
+#EOF
+
+#already done in init script but check to ensure correctness
+#sudo nano /var/lib/pgsql/data/postgresql.conf
+#listen_addresses = '*'
+
+#already done in init script but check to ensure correctness
+#sudo nano /var/lib/pgsql/data/pg_hba.conf
+#host  all  all 0.0.0.0/0 md5
+#sudo systemctl restart postgresql
+
+#Check Connection to db w dbusername 
+#psql -d keycloakdb -U keycloak -W
+#\conninfo
+
+#grant all privileges on database keycloakdb to keycloak;
+
+#change password for postgres user with access to postgres db
+sudo -i -u postgres
+psql
+postgres=# \password
+Enter new password for user "postgres":
+Enter it again:
+
+
+postgres=# create database keycloakdb2;
+CREATE DATABASE
+postgres=# create user keycloak2 with encrypted password 'keycloakpassword2';
+CREATE ROLE
+postgres=# grant all privileges on database keycloakdb2 to keycloak2;
+GRANT
+postgres=# \l
+                                   List of databases
+    Name     |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
+-------------+----------+----------+-------------+-------------+------------------------
+ keycloakdb  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/postgres          +
+             |          |          |             |             | postgres=CTc/postgres +
+             |          |          |             |             | keycloak=CTc/postgres
+ keycloakdb2 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/postgres          +
+             |          |          |             |             | postgres=CTc/postgres +
+             |          |          |             |             | keycloak2=CTc/postgres
+ postgres    | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+ template0   | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres           +
+             |          |          |             |             | postgres=CTc/postgres
+ template1   | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres           +
+             |          |          |             |             | postgres=CTc/postgres
+ test        | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+(6 rows)
+
+
+postgres=# CREATE DATABASE keycloakdb3;
+CREATE DATABASE
+postgres=# CREATE USER keycloak3 WITH ENCRYPTED PASSWORD 'keycloakpassword3';
+CREATE ROLE
+postgres=# GRANT ALL PRIVILEGES ON DATABASE keycloakdb3 TO keycloak3;
+GRANT
+
+-bash-4.2$ psql -d postgres -U postgres
+psql (14.3)
+Type "help" for help.
+
+postgres=# \l
+                                   List of databases
+    Name     |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
+-------------+----------+----------+-------------+-------------+------------------------
+ keycloakdb  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/postgres          +
+             |          |          |             |             | postgres=CTc/postgres +
+             |          |          |             |             | keycloak=CTc/postgres
+ keycloakdb2 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/postgres          +
+             |          |          |             |             | postgres=CTc/postgres +
+             |          |          |             |             | keycloak2=CTc/postgres
+ keycloakdb3 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =Tc/postgres          +
+             |          |          |             |             | postgres=CTc/postgres +
+             |          |          |             |             | keycloak3=CTc/postgres
+ postgres    | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+ template0   | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres           +
+             |          |          |             |             | postgres=CTc/postgres
+ template1   | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres           +
+             |          |          |             |             | postgres=CTc/postgres
+ test        | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+(7 rows)
+postgres=# \c keycloakdb3
+You are now connected to database "keycloakdb3" as user "postgres".
+keycloakdb3=# \du
+                                   List of roles
+ Role name |                         Attributes                         | Member of
+-----------+------------------------------------------------------------+-----------
+ keycloak  |                                                            | {}
+ keycloak2 |                                                            | {}
+ keycloak3 |                                                            | {}
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
+
+[ec2-user@ip-10-79-1-14 ~]$ cat /etc/passwd | grep postgres
+postgres:x:26:26:PostgreSQL Server:/var/lib/pgsql:/bin/bash
+[ec2-user@ip-10-79-1-14 ~]$ sudo -i -u postgres
+-bash-4.2$ psql
+psql (14.3)
+Type "help" for help.
+
+postgres=# \password
+Enter new password for user "postgres":
+Enter it again:
+postgres=# \conninfo
+You are connected to database "postgres" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+postgres=# \c keycloakdb
+You are now connected to database "keycloakdb" as user "postgres".
+
+
+[ec2-user@ip-10-79-1-14 keycloak-20.0.3]$ psql --version
+psql (PostgreSQL) 14.3
+[ec2-user@ip-10-79-1-14 keycloak-20.0.3]$ sudo -u postgres psql
+psql (14.3)
+Type "help" for help.
+
+postgres=# create database keycloak;
+CREATE DATABASE
+postgres=# create user keycloak with encrypted password 'keycloak';
+CREATE ROLE
+postgres=# grant all privileges on database keycloak to keycloak; 
+GRANT
+[ec2-user@ip-10-79-1-14 keycloak-20.0.3]$ psql -h 10.79.1.14 -p 5432 -U postgres
+Password for user postgres: 
+psql (14.3)
+Type "help" for help.
+
+[ec2-user@ip-10-79-1-14 ~]$ sudo -u postgres psql
+could not change directory to "/home/ec2-user": Permission denied
+psql (14.3)
+Type "help" for help.
+postgres=# ALTER DATABASE keycloak OWNER TO keycloak;
+ALTER DATABASE
+
+psql -h 10.79.1.14 -p 5432 -U keycloak
+
+postgres=# \l

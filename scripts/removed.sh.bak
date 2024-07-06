@@ -1,0 +1,132 @@
+#sudo mkdir -p /opt/keycloak/$KC_VERSION/org/postgresql/main
+#sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/org/postgresql/main
+#sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/org/postgresql
+#sudo chown ec2-user:ec2-user -R /opt/keycloak/$KC_VERSION/org/
+#ls -las /opt/keycloak/$KC_VERSION/org/postgresql/main
+
+#Original try #no longer needed
+#sudo wget -c https://jdbc.postgresql.org/download/postgresql-42.5.4.jar -P /opt/keycloak/$KC_VERSION/org/postgresql/main/
+#ls -las /opt/keycloak/$KC_VERSION/org/postgresql/main/
+#file /opt/keycloak/$KC_VERSION/org/postgresql/main/postgresql-42.5.4.jar
+#touch /opt/keycloak/$KC_VERSION/org/postgresql/main/module.xml
+
+#postgres14 config location here
+#sudo vi /var/lib/pgsql/data/postgresql.conf
+#sudo vi /var/lib/pgsql/data/pg_hba.conf
+#sudo systemctl restart postgresql
+
+#sudo nano /var/lib/pgsql/data/postgresql.conf
+
+#JDBC driver seems to be required - need to confirm what folder it should be
+#cd $KC_HOME/modules/system/layers/keycloak/com # OR /org/postgresql/main/ 
+#touch fill_xml.sh
+#nano fill_xml.sh
+#bash fill_xml.sh
+#cat module.xml
+
+#OR 
+#echo "Configure hostname"
+#cd $KC_HOME
+#bin/kc.sh start --hostname=confucious.qcloud.systems
+#echo "Configure keycloak in TLS"
+#cd $KC_HOME
+#bin/kc.sh start --https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/keyfile.pem
+#bin/kc.[sh|bat] start
+#echo "Configure database connection"
+#bin/kc.sh start --db postgres --db-url-host keycloakdb --db-username keycloak --db-password password
+#bin/kc.[sh|bat] start --db postgres --db-url jdbc:postgresql://localhost/keycloakdb --db-password password
+#bin/kc.sh start --db postgres --db-url jdbc:postgresql://10.79.1.13/keycloakdb --db-password password
+
+#incorrect one > #ssh-keygen -t rsa -m PEM
+
+[ec2-user@ip-10-79-1-17 ~]$ ssh-keygen -t rsa -m PEM
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/ec2-user/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/ec2-user/.ssh/id_rsa.
+Your public key has been saved in /home/ec2-user/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:Sbair9s20ED8VzGZcD5Qx9Es4RQxkQ3wdDhN+mgkvis ec2-user@ip-10-79-1-17.us-east-2.compute.internal
+The key's randomart image is:
++---[RSA 2048]----+
+|   .    oo**%/o  |
+|    o    ++B*+=  |
+|   . .  o.+ =o   |
+|    . .o.+ + o   |
+|     o..S . o .  |
+|    ....   o     |
+|    ..    .      |
+|     oo E  .     |
+|    o+o. ..      |
++----[SHA256]-----+
+
+Create Local Keycloak
+cd terraform 
+make build
+
+Errors:
+2023-02-25 04:25:49,929 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) Key material not provided to setup HTTPS. Please configure your keys/certificates or start the server in development mode.
+
+[ec2-user@ip-10-79-1-17 keycloak-20.0.3]$ bin/kc.sh build
+Updating the configuration and installing your custom providers, if any. Please wait.
+2023-02-24 20:34:55,170 INFO  [io.quarkus.deployment.QuarkusAugmentor] (main) Quarkus augmentation completed in 12882ms
+Server configuration updated and persisted. Run the following command to review the configuration:
+
+GO:
+# sudo wget https://go.dev/dl/go1.20.1.linux-386.tar.gz
+# sudo tar -C /usr/local -xzf go1.20.1.linux-386.tar.gz
+# ls /usr/local/go/
+# /usr/local/go --version
+
+#in video possibly more required due to spinning
+#openssl genrsa -out CA-ROOT.key
+#openssl x589 -req -days 365 -in CA-ROOT.csr -out CA-ROOT.crt -signkey CA-ROOT.key
+
+#sudo yum install java-11-openjdk-devel -y
+
+#sudo yum install wget
+
+#sudo amazon-linux-extras install epel -y
+#sudo amazon-linux-extras install java-openjdk11 -y
+
+echo "Install Pip (Pip is not available in CentOS 7 core repositories)"
+#sudo yum install python3-pip -y --user
+#pip3 install requests
+#sudo yum install epel-release -y
+
+#sudo amazon-linux-extras enable postgresql14
+
+#echo "Install CloudWatch Agent"
+#sudo yum install amazon-cloudwatch-agent -y
+
+#echo "Install Dev Tools"
+#sudo yum groupinstall "Development tools" -y                                                                                                           #for gcc compiler
+
+#echo "For troubleshooting flexlm, install telnet"
+#sudo yum -y install telnet
+
+#curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+#. ~/.nvm/nvm.sh
+#npm install -g npm
+#nvm install 16
+#node -e "console.log('Running Node.js ' + process.version)"
+#curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
+#sudo yum install nodejs -y
+#node --version
+#npm --version
+#sudo dnf remove nodejs npm -y
+#sudo dnf install nodejs -y
+
+#pip3 list | grep boto
+#python -V
+
+#pip -v
+#pip3 -v
+
+echo "Create Realm and Admin User"
+#cd $KC_HOME
+#./bin/kcadm.sh create realms -s realm="myrealm" -s enabled=true
+#./bin/kcadm.sh config credentials --server http://3.21.244.209:8080/auth --user admin --password admin --realm master
+#cd $KC_HOME
+#./bin/kcadm.sh -r myrealm -u admin -p admin

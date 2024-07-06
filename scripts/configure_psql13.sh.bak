@@ -1,0 +1,46 @@
+#Fourth attempt https://stackfame.com/creating-user-database-and-adding-access-on-postgresql
+#requires Centos 7 AMI
+
+#!/bin/bash
+
+set -e
+
+DB_NAME=${1:-keycloakdb}
+DB_USER=${2:-keycloakdbadmin}
+DB_USER_PASS=${3:-keycloakdemo}
+
+sudo su postgres <<EOF
+createdb  $DB_NAME;
+psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_USER_PASS';"
+psql -c "grant all privileges on database $DB_NAME to $DB_USER;"
+echo "Postgres User '$DB_USER' and database '$DB_NAME' created."
+EOF
+
+#Previous attempts, didn't work
+#1
+#echo "Update Linux"
+#sudo yum update -y
+#sudo cat /var/lib/pgsql/13/data/pg_hba.conf
+
+# su -c "psql -d database_name -c \"SELECT c_defaults  FROM user_info WHERE c_uid = 'testuser'\"" postgres
+
+#Run this as the Postgres Owner: (default linux postgres user is ‘postgres’)
+#sudo su - postgres
+#psql
+
+#create role gtdbadmin;
+#create database gtplaydb;
+#alter database gtplaydb owner to gtdbadmin;
+
+#2
+#su – postgres
+#psql
+#\list
+#CREATE DATABASE gtplaydb;
+#\q
+
+#bash script to run psql commands
+#!/bin/bash
+#psql postgresql://<user>:<password>@<host>/<db> << EOF
+#       <your sql queries go here>
+#EOF

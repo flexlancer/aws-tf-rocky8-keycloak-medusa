@@ -1,0 +1,129 @@
+#!/bin/bash
+KC_HOME="/opt/keycloak/"
+KC_VERSION="keycloak-20.0.3"
+VERSION="20.0.3"
+PSQL_JAR="postgresql-42.5.4.jar"
+
+echo "Update Linux, dnf, & Instal Java 11"
+sudo yum update -y
+sudo dnf update
+sudo dnf -y install wget
+sudo dnf install java-11-openjdk java-11-openjdk-devel -y
+java --version
+javac --version
+
+echo "Create keycloak directory"
+sudo mkdir $KC_HOME                                     
+sudo chown rocky:rocky $KC_HOME
+ls -las $KC_HOME
+
+echo "Create models directory & Attempt model dir ebs volume mount on Keycloak instances"
+sudo mkdir /var/opt/keycloak/
+sudo mkfs -t xfs /dev/xvdf
+sudo mount /dev/xvdf /var/opt/keycloak
+sudo chown rocky:rocky /var/opt/keycloak/
+
+echo "Check model-dir mount"
+ls -las /var/opt/keycloak/
+sudo lsblk -f
+sudo file -s /dev/xvdf
+sudo blkid
+
+echo "Install Key Cloak"
+sudo wget https://github.com/keycloak/keycloak/releases/download/$VERSION/$KC_VERSION.tar.gz
+sudo tar -C /opt/keycloak -xzf $KC_VERSION.tar.gz
+sudo chown rocky:rocky -R $KC_HOME  
+
+echo "Update Linux and prepare for postgres #requires Centos 7 AMI"
+sudo yum update -y
+sudo yum install -y python3
+
+echo "Create Postgres modules directory & chown directories"
+sudo mkdir -p /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+sudo chown rocky:rocky -R /opt/keycloak/$KC_VERSION/modules/
+sudo ls -las /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+sudo ls -las /opt/keycloak/$KC_VERSION/modules/
+
+echo "Install Postgres JDBC driver"
+sudo wget -c https://jdbc.postgresql.org/download/$PSQL_JAR -P /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+ls -las /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+file /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com/$PSQL_JAR
+touch /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com/module.xml
+sudo chown rocky:rocky -R /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com
+
+echo "create module local"
+touch module.xml
+cat >module.xml <<EOF
+<?xml version="1.0" ?>
+<module xmlns="urn:jboss:module:1.3" name="com.postgres">
+ <resources>
+  <resource-root path="postgresql-42.5.4.jar" />
+ </resources>
+ <dependencies>
+  <module name="javax.api"/>
+  <module name="javax.transaction.api"/>
+ </dependencies>
+</module>
+EOF
+
+echo "Install postgres 14 on amazon linux2 https://devopscube.com/install-configure-postgresql-amazon-linux/"
+sudo yum install postgresql-server -y
+postgresql-setup --initdb --unit postgresql
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+sudo systemctl status postgresql
+
+echo "Add entries in /var/lib/pgsql/data/pg_hba.conf to allow md5 auth for all & postgres User"
+sudo su
+echo 'host      all           all             0.0.0.0/0               md5' >> /var/lib/pgsql/data/pg_hba.conf
+echo 'host      all           postgres        127.0.0.1/32            md5' >> /var/lib/pgsql/data/pg_hba.conf
+
+echo "Add Listener entry in /var/lib/pgsql/data/postgresql.conf "
+sudo su
+echo "listen_addresses = '*'" >> /var/lib/pgsql/data/postgresql.conf
+
+echo "Update /etc/fstab for mount"
+sudo su
+echo  "/dev/xvdf       /var/opt/keycloak        xfs     defaults,noatime        0       0  " >> /etc/fstab
+sudo mount -a
+
+echo "Configure $KC_HOME $KC_VERSION/conf/keycloak.conf > configure_kc_prod.sh"
+cp /opt/keycloak/$KC_VERSION/conf/keycloak.conf /opt/keycloak/$KC_VERSION/conf/keycloak.conf.orig
+sed -i "s;#db=postgres;db=postgres;g" /opt/keycloak/$KC_VERSION/conf/keycloak.conf
+sed -i "s;#db-username=keycloak;db-username=keycloak;g" /opt/keycloak/$KC_VERSION/conf/keycloak.conf
+sed -i "s;#db-password=password;db-password=keycloak;g" /opt/keycloak/$KC_VERSION/conf/keycloak.conf
+sed -i "s;#hostname=myhostname;hostname=keycloak.local:8443;g" /opt/keycloak/$KC_VERSION/conf/keycloak.conf
+sed -i "s;#proxy=reencrypt;proxy=edge;g" /opt/keycloak/$KC_VERSION/conf/keycloak.conf 
+sudo chown rocky:rocky /opt/keycloak/$KC_VERSION/conf/keycloak.conf 
+ls -las /opt/keycloak/$KC_VERSION/conf/keycloak.conf
+
+echo "Configure hosts file #/etc/hosts"
+sudo sed -i "s;127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4;127.0.0.1   localhost keycloak.local:8443 kierkegaard.qcloud.systems:8443 localdomain4;g" /etc/hosts
+
+echo "Javascript must be enabled to run this app https://stackoverflow.com/questions/8205369/installing-npm-on-aws-ec2"
+dnf update -y
+dnf install curl -y
+curl -sL https://rpm.nodesource.com/setup_16.x | bash 
+sudo dnf install -y nodejs
+node -v
+npm -v
+
+echo "Show python,pip versions"
+python3 --version
+
+echo "configure_postgres14.sh"
+java --version
+javac --version
+
+echo "Copy to /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com/module.xml"
+cp module.xml /opt/keycloak/$KC_VERSION/modules/system/layers/keycloak/com/module.xml
+
+echo "Create postgres components"
+sudo -u postgres psql << EOF
+create database keycloak;
+create user keycloak with encrypted password 'keycloak';
+grant all privileges on database keycloak to keycloak;
+ALTER DATABASE keycloak OWNER TO keycloak;
+EOF
+sudo systemctl restart postgresql
+sudo systemctl status postgresql

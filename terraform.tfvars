@@ -1,0 +1,7 @@
+region                = "us-east-2"
+vpc_cidr              = "10.86.0.0/16"
+public_subnet_1_cidr  = "10.86.1.0/24"
+public_subnet_2_cidr  = "10.86.2.0/24"
+private_subnet_1_cidr = "10.86.10.0/24"
+private_subnet_2_cidr = "10.86.20.0/24"
+nat_gw_eip            = "10.86.0.5"
