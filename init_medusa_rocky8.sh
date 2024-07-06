@@ -14,12 +14,10 @@ sudo systemctl enable postgresql
 sudo systemctl status postgresql
 
 echo "Add entries in /var/lib/pgsql/data/pg_hba.conf to allow md5 auth for all & postgres User"
+echo "Add Listener entry in /var/lib/pgsql/data/postgresql.conf "
 sudo su
 echo 'host      all           all             0.0.0.0/0               md5' >> /var/lib/pgsql/data/pg_hba.conf
 echo 'host      all           postgres        127.0.0.1/32            md5' >> /var/lib/pgsql/data/pg_hba.conf
-
-echo "Add Listener entry in /var/lib/pgsql/data/postgresql.conf "
-sudo su
 echo "listen_addresses = '*'" >> /var/lib/pgsql/data/postgresql.conf
 
 echo "Create postgres components"
