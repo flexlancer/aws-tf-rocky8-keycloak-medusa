@@ -4,13 +4,11 @@ Setup with AWS free tier eligible 30 GB HD and t2.micro ec2 instance
 ```
 /etc/hosts
 keycloak.local
-aquinas.villasfoundation.com
+localhost
 
 Keycloak CLI commands:
 bin/kc.sh build --db postgres #try this one --transaction-xa-enabled=false
 bin/kc.sh start --optimized --hostname-strict-backchannel=true --https-protocols=TLSv1.3,TLSv1.2 --hostname-strict-https=true 
-
-K3yCl0@kD1sc0ur53
 ```
 ###### Dependencies: 
 ```
@@ -33,10 +31,10 @@ tfenv version
 kubectl version
 
 helm version
-chmod 600 /home/mechanic/.kube/config
+chmod 600 /home/<user>/.kube/config
 
 pip install aws-mfa
-aws_mfa_device = arn:aws:iam::271192833499:mfa/GoogleAuthQCS
+aws_mfa_device = arn:aws:iam:::mfa/GoogleAuth
 
 # brew install aws-vault
 https://github.com/99designs/aws-vault
@@ -55,12 +53,12 @@ https://github.com/aquasecurity/tfsec
 ###### Git:
 ```
 git init
-git remote add origin git@github.com:qcloud-systems/hugo-audio-quintessentialcloud-com.git
+git remote add origin git@github.com:qcloud-systems/<repo-name>.git
 Create Git Repo via GUI at github.com:
 
 Add remote repo from local shell command line:  
-git remote add origin git@github.com:qcloud-systems/aws-tf-keycloak.git
-git checkout -b 20230226-pr
+git remote add origin git@github.com:qcloud-systems/<repo-name>.git
+git checkout -b 20240726-pr
 git add . 
 git rm -r .terraform/*
 
