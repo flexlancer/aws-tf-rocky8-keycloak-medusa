@@ -32,7 +32,7 @@ terraform {
 
   # FOR USE WITH TERRAFORM CLOUD
   #cloud {
-  #  organization = "gt-gvillas"
+  #  organization = "gv"
   #  workspaces {
   #    name = "keycloak-prod"
   #  }
