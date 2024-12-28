@@ -53,11 +53,11 @@ https://github.com/aquasecurity/tfsec
 ###### Git:
 ```
 git init
-git remote add origin git@github.com:qcloud-systems/<repo-name>.git
+git remote add origin git@github.com:<username>/<repo-name>.git
 Create Git Repo via GUI at github.com:
 
 Add remote repo from local shell command line:  
-git remote add origin git@github.com:qcloud-systems/<repo-name>.git
+git remote add origin git@github.com:<username>/<repo-name>.git
 git checkout -b 20240726-pr
 git add . 
 git rm -r .terraform/*
