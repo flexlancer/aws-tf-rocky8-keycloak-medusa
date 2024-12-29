@@ -1,0 +1,193 @@
+data "aws_ami" "ubuntu-20" {
+  most_recent = true
+  owners      = ["099720109477"]
+  filter {
+    name = "name"
+    values = [
+      "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-*",
+    ]
+  }
+  filter {
+    name = "virtualization-type"
+    values = [
+      "hvm",
+    ]
+  }
+}
+
+resource "aws_instance" "ubuntu-20-chefserv-instance" {
+  ami                    = data.aws_ami.ubuntu-20.id
+  #ami                   = var.instance_ami
+  instance_type          = var.instance_type
+  key_name               = var.keyname
+  vpc_security_group_ids = ["${aws_security_group.sg_allow_ssh.id}"]
+  subnet_id              = aws_subnet.public-subnet-1.id
+  #name                  = "${var.name}"
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    host        = self.public_ip
+    private_key = file("~/ubuntu20_eucentral1.pem")
+  }
+
+  #user_data = <<EOF
+  ##!/bin/bash -x
+  #echo "Install Java JDK 11"
+  #sudo apt install openjdk-11-jdk -y
+  #sudo apt install docker.io -y
+  #EOF
+  #user_data = "${file("install_jq.sh")}"
+  user_data = file("install_chef_server.sh")
+
+  provisioner "remote-exec" {
+    inline = ["sudo apt install -y software-properties-common",
+      "sudo apt update","sudo apt install docker.io -y",
+      "echo Update Ubuntu attempt Done!",
+    ]
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      port        = 22
+      user        = "ubuntu"
+      private_key = file("~/ubuntu20_chefserver_eucentral1.pem")
+      #private_key = "${file("~/"+var.keyname+".pem")}"
+      timeout = "1m"
+      #host_key    = file("~/"+var.keyname+".pem")
+    }
+  }
+
+  associate_public_ip_address = true
+  tags = {
+    Name = "ubuntu-20-chefserv-instance"
+  }
+}
+
+resource "aws_instance" "ubuntu-20-chefws-instance" {
+  ami                    = data.aws_ami.ubuntu-20.id
+  #ami                   = var.instance_ami
+  instance_type          = var.instance_type
+  key_name               = var.keyname
+  vpc_security_group_ids = ["${aws_security_group.sg_allow_ssh.id}"]
+  subnet_id              = aws_subnet.public-subnet-2.id
+  #name                  = "${var.name}"
+
+  #user_data = <<EOF
+  ##!/bin/bash -x
+  #echo "Install Java JDK 11"
+  #sudo apt install openjdk-11-jdk -y
+  #sudo apt install docker.io -y
+  #EOF
+  user_data = file("install_chef_ws.sh")
+  #user_data = file("install_ansible.sh")
+
+  provisioner "remote-exec" {
+    inline = ["curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh",
+      "chmod 700 get_helm.sh",
+      "./get_helm.sh",
+      "curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"",
+      "curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"",
+      "echo "$(<kubectl.sha256) kubectl" | sha256sum --check",
+      "sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl",
+      "kubectl version --client",
+      "echo Installed Helm and Update ubuntu-20-chefws-instance attempt Done!",
+    ]
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      port        = 22
+      user        = "ubuntu"
+      private_key = file("~/ubuntu20_chefws_eucentral1.pem")
+      #private_key = "${file("~/"+var.keyname+".pem")}"
+      timeout = "1m"
+      #host_key    = file("~/"+var.keyname+".pem")
+    }
+  }
+
+  associate_public_ip_address = true
+  tags = {
+    Name = "ubuntu-20-chefws-instance"
+  }
+}
+
+resource "aws_security_group" "sg_allow_ssh" {
+  name        = "allow_ssh"
+  description = "Allow SSH inbound traffic"
+  vpc_id      = aws_vpc.main-vpc.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow ping"
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+output "ubuntu20_chefserv_instance_public_dns" {
+  description = "public_dns of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefserv-instance.public_dns
+}
+
+output "ubuntu20_chefserv_instance_public_ip" {
+  description = "Public IP address of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefserv-instance.public_ip
+}
+
+output "ubuntu20_chefserv_instance_ami" {
+  description = "AMI of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefserv-instance.ami
+}
+
+output "ubuntu20_chefserv_instance_availability_zone" {
+  description = "availability_zone of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefserv-instance.availability_zone
+}
+
+output "ubuntu20_chefws_instance_public_dns" {
+  description = "public_dns of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefws-instance.public_dns
+}
+
+output "ubuntu20_chefws_instance_public_ip" {
+  description = "Public IP address of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefws-instance.public_ip
+}
+
+output "ubuntu20_chefws_instance_ami" {
+  description = "AMI of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefws-instance.ami
+}
+
+output "ubuntu20_chefws_instance_availability_zone" {
+  description = "availability_zone of EC2 instance"
+  value       = aws_instance.ubuntu-20-chefws-instance.availability_zone
+}
